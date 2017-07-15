@@ -993,7 +993,15 @@ class SpryDB
 			$fields[] = $this->columnQuote(preg_replace("/^(\(JSON\)\s*|#)/i", "", $key));
 		}
 
-		return $this->exec('INSERT INTO ' . $this->tableQuote($table) . ' (' . implode(', ', $fields) . ') VALUES ' . implode(', ', $stack));
+		$result = $this->exec('INSERT INTO ' . $this->tableQuote($table) . ' (' . implode(', ', $fields) . ') VALUES ' . implode(', ', $stack));
+
+		if($result)
+		{
+			return $this->id();
+		}
+
+		return $result;
+
 	}
 
 	public function update($table, $data, $where = null)
