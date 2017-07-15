@@ -52,11 +52,6 @@ class SpryDB
 				return false;
 			}
 
-			if(empty($options['username']) || empty($options['database_name']))
-			{
-				Spry::stop(5032);
-			}
-
 			if (isset($options['migrate_schema']))
 			{
 				$this->migrate_schema = $options['migrate_schema'];
@@ -250,8 +245,6 @@ class SpryDB
 				$options['password'],
 				$this->option
 			);
-
-			exit;
 
 			foreach ($commands as $value)
 			{
