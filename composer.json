@@ -1,9 +1,10 @@
 {
     "name": "ggedde/spry-db",
-    "description": "Provider for Spry",
+    "description": "Database Provider for Spry",
     "type": "SpryProvider",
     "require": {
-        "php": ">=5.4.0"
+        "php": ">=5.4.0",
+        "catfan/medoo": "~v1.4.5"
     },
     "license": "MIT",
     "authors": [
