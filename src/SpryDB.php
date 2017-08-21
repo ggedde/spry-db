@@ -37,9 +37,9 @@ class SpryDB extends Medoo
 	{
 		$query = parent::query($query, $map);
 
-		if($this->pdo->errorCode() > 1)
+		if($this->hasError())
 		{
-			Spry::stop(5031, null, $this->error());
+			Spry::stop(5031, null, $this->errorMessage());
 		}
 
 		return $query;
@@ -47,19 +47,41 @@ class SpryDB extends Medoo
 
 	public function exec($query, $map = [])
 	{
-		$query = parent::exec($query, $map);
+		$exec = parent::exec($query, $map);
 
-		if($this->pdo->errorCode() > 1)
+		if($this->hasError())
 		{
-			Spry::stop(5031, null, $this->error());
+			Spry::stop(5031, null, $this->errorMessage());
 		}
 
-		return $query;
+		return $exec;
 	}
 
-	public function has_error()
+	public function hasError()
 	{
-		return ($this->pdo->errorCode() ? 1 : 0);
+		$error = $this->error();
+		
+		if((isset($error[0]) && $error[0] > 0) || (isset($error[1]) && $error[1] > 0))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	public function errorMessage()
+	{
+		$error = $this->error();
+
+		if(!empty($error[2]))
+		{
+			return $error[2];
+		}
+		else if((isset($error[0]) && $error[0] > 0) || (isset($error[1]) && $error[1] > 0))
+		{
+			return 'Unknown';
+		}
+
+		return '';
 	}
 
 	public function migrate($args = array('destructive' => null, 'dryrun' => false))
@@ -138,11 +160,9 @@ class SpryDB extends Medoo
 
 	private function migrateCheckErrors($command='')
 	{
-		$error = $this->error();
-
-		if(!empty($error[2]))
+		if($error = $this->errorMessage())
 		{
-			$this->migration['logs'][] = 'DB Error: ('.$command.') '.$error[2];
+			$this->migration['logs'][] = 'DB Error: ('.$command.') '.$error;
 		}
 	}
 
