@@ -60,7 +60,7 @@ class SpryDB extends Medoo
 	public function hasError()
 	{
 		$error = $this->error();
-		
+
 		if((isset($error[0]) && $error[0] > 0) || (isset($error[1]) && $error[1] > 0))
 		{
 			return true;
@@ -396,6 +396,12 @@ class SpryDB extends Medoo
 			case 'int':
 
 				return 'int(10)';
+
+			break;
+
+			case 'bigint':
+
+				return 'bigint(32)';
 
 			break;
 
