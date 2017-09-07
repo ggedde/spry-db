@@ -401,7 +401,7 @@ class SpryDB extends Medoo
 
 			case 'bigint':
 
-				return 'bigint(32)';
+				return 'bigint(21)';
 
 			break;
 
