@@ -39,7 +39,7 @@ class SpryDB extends Medoo
 
 		if($this->hasError())
 		{
-			Spry::stop(5031, null, $this->errorMessage());
+			Spry::stop(5031, null, $this->errorMessage().' - SQLCode: ('.$this->errorCode().')');
 		}
 
 		return $query;
@@ -51,7 +51,7 @@ class SpryDB extends Medoo
 
 		if($this->hasError())
 		{
-			Spry::stop(5031, null, $this->errorMessage());
+			Spry::stop(5031, null, $this->errorMessage().'  - SQLCode: ('.$this->errorCode().')');
 		}
 
 		return $exec;
@@ -106,6 +106,22 @@ class SpryDB extends Medoo
 		else if((isset($error[0]) && $error[0] > 0) || (isset($error[1]) && $error[1] > 0))
 		{
 			return 'Unknown';
+		}
+
+		return '';
+	}
+
+	public function errorCode()
+	{
+		$error = $this->error();
+
+		if(!empty($error[0]))
+		{
+			return $error[0];
+		}
+		else if(!empty($error[1]))
+		{
+			return $error[1];
 		}
 
 		return '';
