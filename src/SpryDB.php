@@ -489,12 +489,14 @@ class SpryDB extends Medoo
 			break;
 
 			case 'longtext':
+			case 'bigtext':
 
 				return 'longtext';
 
 			break;
 
 			case 'longstring':
+			case 'bigstring':
 
 				return 'varchar(255)';
 
