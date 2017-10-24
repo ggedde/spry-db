@@ -545,7 +545,7 @@ class SpryDB extends Medoo
 							$add_result = $this->exec($sql);
 						}
 
-						if($drop_result || $add_result)
+						if(!empty($drop_result) || !empty($add_result))
 						{
 							$this->migration['logs'][] = $log_message;
 						}
