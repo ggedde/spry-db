@@ -185,15 +185,6 @@ class SpryDB extends Medoo
 							'update' => 'now'
 						];
 					}
-
-					// Update Unique to Array if True
-					foreach ($table['columns'] as $field => $column)
-					{
-						if(!empty($column['unique']) && !is_array($column['unique']))
-						{
-							$this->migration['schema']['tables'][$table_name]['columns'][$field]['unique'] = [$field];
-						}
-					}
 				}
 			}
 
@@ -503,6 +494,16 @@ class SpryDB extends Medoo
 					if(!isset($schema_field['unique']))
 					{
 						$schema_field['unique'] = [];
+					}
+
+					if(!empty($schema_field['unique']) && !is_array($schema_field['unique']))
+					{
+						$schema_field['unique'] = [$field['Field']];
+					}
+
+					if(!empty($schema_field['unique']) && is_array($schema_field['unique']) && !in_array($field['Field'], $schema_field['unique']))
+					{
+						array_unshift($schema_field['unique'], $field['Field']);
 					}
 
 					$unique_fields = [];
