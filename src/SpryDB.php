@@ -161,7 +161,7 @@ class SpryDB extends Medoo
 							'type' => 'int',
 							'primary' => 1,
 							'auto_increment' => 1,
-							'default' => 0
+							'default' => ''
 						];
 
 						$this->migration['schema']['tables'][$table_name]['columns'] = array_merge(['id' => $column_id], $this->migration['schema']['tables'][$table_name]['columns']);
@@ -172,7 +172,7 @@ class SpryDB extends Medoo
 					{
 						$this->migration['schema']['tables'][$table_name]['columns']['created_at'] = [
 							'type' => 'datetime',
-							'default_datetime' => 1,
+							'default' => 'now'
 						];
 					}
 
@@ -181,9 +181,18 @@ class SpryDB extends Medoo
 					{
 						$this->migration['schema']['tables'][$table_name]['columns']['updated_at'] = [
 							'type' => 'datetime',
-							'default_datetime' => 1,
-							'update_datetime' => 1,
+							'default' => 'now',
+							'update' => 'now'
 						];
+					}
+
+					// Update Unique to Array if True
+					foreach ($table['columns'] as $field => $column)
+					{
+						if(!empty($column['unique']) && !is_array($column['unique']))
+						{
+							$this->migration['schema']['tables'][$table_name]['columns'][$field]['unique'] = [$field];
+						}
 					}
 				}
 			}
@@ -421,7 +430,128 @@ class SpryDB extends Medoo
 			}
 
 			// Update Fields
-			#TODO
+			if(!empty($fields))
+			{
+				foreach ($fields as $field)
+				{
+					if(isset($field['Type']) && isset($field['Null']) && isset($this->migration['schema']['tables'][$table_name]['columns'][$field['Field']]))
+					{
+						$schema_field = $this->migration['schema']['tables'][$table_name]['columns'][$field['Field']];
+						$schema_type = $this->migrateFieldType($schema_field);
+						$schema_null = (!empty($schema_field['null']) ? 'YES' : 'NO');
+
+						if(!isset($field['Default']))
+						{
+							if($schema_null === 'YES')
+							{
+								$field['Default'] = 'NULL';
+							}
+							else
+							{
+								$field['Default'] = '';
+							}
+						}
+
+						$schema_default = $this->migrateFieldDefault($schema_field);
+
+						$type_match = (strtolower(trim($field['Type'])) === strtolower(trim($schema_type)));
+						$null_match = (strtolower(trim($field['Null'])) === strtolower(trim($schema_null)));
+						$default_match = (strtolower(trim($field['Default'])) === strtolower(trim($schema_default)));
+
+						if(!$type_match || !$null_match || !$default_match)
+						{
+							$log_message = 'Update Column ['.$this->prefix.$table_name.'.'.$field['Field'].'] '.$this->migrateFieldValues($schema_field);
+
+							if($this->migration['options']['dryrun'])
+							{
+								$this->migration['logs'][] = '(DRYRUN): '.$log_message;
+								continue;
+							}
+
+							if( ! $this->migration['options']['destructive'])
+							{
+								$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
+								continue;
+							}
+
+							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' MODIFY '.$field['Field'].' '.$this->migrateFieldValues($schema_field);
+
+							$result = $this->exec($sql);
+
+							if($result || $result === 0 || $result === '0')
+							{
+								$this->migration['logs'][] = $log_message;
+							}
+							else
+							{
+								$this->migration['logs'][] = 'Error: '.$log_message.'. Reported an Error.';
+							}
+
+							$this->migrateCheckErrors($sql);
+						}
+					}
+
+				}
+			}
+
+			// Update Unique Indexes
+			if(!empty($fields))
+			{
+				foreach ($fields as $field)
+				{
+					$schema_field = $this->migration['schema']['tables'][$table_name]['columns'][$field['Field']];
+					if(!isset($schema_field['unique']))
+					{
+						$schema_field['unique'] = [];
+					}
+
+					$unique_fields = [];
+
+					$sql = 'SHOW INDEX FROM '.$this->prefix.$table_name." WHERE Key_name = '".$field['Field']."'";
+
+					if($result = $this->exec($sql))
+					{
+						foreach($result->fetchAll() as $row)
+						{
+							$unique_fields[] = $row['Column_name'];
+						}
+					}
+
+					if(implode(',', $unique_fields) !== implode(',', $schema_field['unique']))
+					{
+						$log_message = 'Update Unique Index ['.$this->prefix.$table_name.'.'.$field['Field'].']';
+
+						if($this->migration['options']['dryrun'])
+						{
+							$this->migration['logs'][] = '(DRYRUN): '.$log_message;
+							continue;
+						}
+
+						if( ! $this->migration['options']['destructive'])
+						{
+							$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
+							continue;
+						}
+
+						if(!empty($unique_fields))
+						{
+							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' DROP INDEX "'.$field['Field'].'"';
+							$drop_result = $this->exec($sql);
+						}
+
+						if(!empty($schema_field['unique']))
+						{
+							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' ADD UNIQUE KEY "'.$field['Field'].'" ("'.implode('","',$schema_field['unique']).'")';
+							$add_result = $this->exec($sql);
+						}
+
+						if($drop_result || $add_result)
+						{
+							$this->migration['logs'][] = $log_message;
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -436,6 +566,12 @@ class SpryDB extends Medoo
 
 		switch ($type)
 		{
+			case 'tinyint':
+
+				return 'tinyint(3)';
+
+			break;
+
 			case 'int':
 
 				return 'int(10)';
@@ -461,6 +597,12 @@ class SpryDB extends Medoo
 
 			break;
 
+			case 'decimal':
+
+				return 'decimal(10,2)';
+
+			break;
+
 			case 'options':
 			case 'enum':
 
@@ -470,25 +612,6 @@ class SpryDB extends Medoo
 
 			break;
 
-			case 'datetime':
-
-				return 'datetime';
-
-			break;
-
-			case 'timestamp':
-
-				return 'timestamp';
-
-			break;
-
-			case 'text':
-
-				return 'text';
-
-			break;
-
-			case 'longtext':
 			case 'bigtext':
 
 				return 'longtext';
@@ -507,9 +630,87 @@ class SpryDB extends Medoo
 				return 'varchar(64)';
 
 			break;
+
+			case 'tinystring':
+
+				return 'varchar(10)';
+
+			break;
 		}
 
 		return $type;
+	}
+
+	private function migrateFieldDefault($field=[])
+	{
+		if(isset($field['default']))
+		{
+			if(in_array(trim(strtoupper($field['default'])), ['NOW()','NOW','CURRENT_TIMESTAMP']))
+			{
+				return 'CURRENT_TIMESTAMP';
+			}
+
+			return $field['default'];
+		}
+
+		if(!empty($field['auto_increment']) && !empty($field['primary']))
+		{
+			return '';
+		}
+
+		$type = isset($field['type']) ? $field['type'] : 'string';
+
+		if(!empty($field['options']))
+		{
+			$type = 'options';
+		}
+
+		if(!empty($field['null']))
+		{
+			return 'NULL';
+		}
+
+		switch ($type)
+		{
+			case 'tinyint':
+			case 'int':
+			case 'bigint':
+			case 'bool':
+			case 'boolean':
+			case 'number':
+			case 'float':
+			case 'timestamp':
+
+				return '0';
+
+			break;
+
+			case 'decimal':
+
+				return '0.00';
+
+			break;
+
+			case 'datetime':
+
+				return '0000-00-00 00:00:00';
+
+			break;
+
+			case 'date':
+
+				return '0000-00-00';
+
+			break;
+
+			case 'time':
+
+				return '00:00:00';
+
+			break;
+		}
+
+		return '';
 	}
 
 	private function migrateFieldValues($field=[])
@@ -518,7 +719,6 @@ class SpryDB extends Medoo
 
 		$default = [
 			'type' => 'string',
-			'default' => ''
 		];
 
 		$field = array_merge($default, $field);
@@ -554,17 +754,24 @@ class SpryDB extends Medoo
 		}
 
 		// Default
-		if(!empty($field['default_datetime']))
+		$field_default = $this->migrateFieldDefault($field);
+
+		$is_null = (!empty($field['null']) && strtoupper($field_default) === 'NULL');
+
+		if($field_default !== '' && !$is_null)
 		{
-			$field_values[] = 'DEFAULT CURRENT_TIMESTAMP';
-		}
-		elseif(!empty($field['default']))
-		{
-			$field_values[] = "DEFAULT '".$field['default']."'";
+			if($field_default === 'CURRENT_TIMESTAMP')
+			{
+				$field_values[] = 'DEFAULT CURRENT_TIMESTAMP';
+			}
+			else
+			{
+				$field_values[] = "DEFAULT '".$field_default."'";
+			}
 		}
 
 		// Extra
-		if(!empty($field['update_datetime']))
+		if(!empty($field['update']) && in_array(trim(strtoupper($field['update'])), ['NOW()','NOW','CURRENT_TIMESTAMP']))
 		{
 			$field_values[] = 'ON UPDATE CURRENT_TIMESTAMP';
 		}
