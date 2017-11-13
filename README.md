@@ -5,31 +5,31 @@ Spry's default Provider uses "Medoo" and you can find all the Documentation here
 
 ### Configuration Settings
 
-		$config->db = [
-			'provider' => 'Spry\\SpryProvider\\SpryDB',
-			'database_type' => 'mysql',
-			'database_name' => '',
-			'server' => 'localhost',
-			'username' => '',
-			'password' => '',
-			'charset' => 'utf8',
-			'port' => 3306,
-			'prefix' => 'api_x_', // Should change this to be someting Unique
-			'schema' => [
-				'tables' => [
-					'users' => [
-						'columns' => [
-							'name' => [
-								'type' => 'string'
-							],
-							'email' => [
-								'type' => 'string'
-							],
-						]
-					]
-				]
-			]
-		];
+    $config->db = [
+        'provider' => 'Spry\\SpryProvider\\SpryDB',
+        'database_type' => 'mysql',
+        'database_name' => '',
+        'server' => 'localhost',
+        'username' => '',
+        'password' => '',
+        'charset' => 'utf8',
+        'port' => 3306,
+        'prefix' => 'api_x_', // Should change this to be someting Unique
+        'schema' => [
+            'tables' => [
+                'users' => [
+                    'columns' => [
+                        'name' => [
+                            'type' => 'string'
+                        ],
+                        'email' => [
+                            'type' => 'string'
+                        ],
+                    ]
+                ]
+            ]
+        ]
+    ];
   
   
 ### Schema
@@ -44,33 +44,33 @@ Using Spry CLI your can run
 
 Scheme Settings
 
-	'schema' => [
-		'tables' => [
-			'users' => [
-				'columns' => [
-					'name' => [
-						'type' => 'string'
-					],
-					'email' => [
-						'type' => 'string',
-						'unique' => true
-					],
-					'amount' => [
-						'type' => 'number',
-						'default' => 0
-					],
-					'status' => [
-						'type' => 'enum',
-						'options' => ['pending','active','completed','archived',''],
-					],
-					'start_date' => [
-						'type' => 'datetime',
-						'default' => 'CURRENT_TIMESTAMP'
-					],
-				]
-			]
-		]
-	]
+    'schema' => [
+        'tables' => [
+            'users' => [
+                'columns' => [
+                    'name' => [
+                        'type' => 'string'
+                    ],
+                    'email' => [
+                        'type' => 'string',
+                        'unique' => true
+                    ],
+                    'amount' => [
+                        'type' => 'number',
+                        'default' => 0
+                    ],
+                    'status' => [
+                        'type' => 'enum',
+                        'options' => ['pending','active','completed','archived',''],
+                    ],
+                    'start_date' => [
+                        'type' => 'datetime',
+                        'default' => 'CURRENT_TIMESTAMP'
+                    ],
+                ]
+            ]
+        ]
+    ]
  
 #### Various Column Types
 
@@ -96,14 +96,14 @@ By default the scheme will create an 'id', 'updated_at' and 'created_at' fields.
 
 You can remove these by using 'use_id' and 'timestamps' in the table schema settings.
 
-	'schema' => [
-		'tables' => [
-			'users' => [
-				'use_id' => false,
-				'timestamps' => false
-			]
-		]
-	]
+    'schema' => [
+        'tables' => [
+            'users' => [
+                'use_id' => false,
+                'timestamps' => false
+            ]
+        ]
+    ]
     
     
 ### Unique Key
