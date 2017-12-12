@@ -127,11 +127,11 @@ class SpryDB extends Medoo
 		return '';
 	}
 
-	public function migrate($args = array('destructive' => null, 'dryrun' => false))
+	public function migrate($args = array('force' => null, 'dryrun' => false))
 	{
 		// Defaults
 		$options = array(
-			'destructive' => false,
+			'force' => false,
 			'dryrun' => false
 		);
 
@@ -255,7 +255,7 @@ class SpryDB extends Medoo
 					continue;
 				}
 
-				if( ! $this->migration['options']['destructive'])
+				if( ! $this->migration['options']['force'])
 				{
 					$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
 					continue;
@@ -426,7 +426,7 @@ class SpryDB extends Medoo
 							continue;
 						}
 
-						if( ! $this->migration['options']['destructive'])
+						if( ! $this->migration['options']['force'])
 						{
 							$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
 							continue;
@@ -467,7 +467,7 @@ class SpryDB extends Medoo
 							continue;
 						}
 
-						if( ! $this->migration['options']['destructive'])
+						if( ! $this->migration['options']['force'])
 						{
 							$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
 							continue;
@@ -530,7 +530,7 @@ class SpryDB extends Medoo
 								continue;
 							}
 
-							if( ! $this->migration['options']['destructive'])
+							if( ! $this->migration['options']['force'])
 							{
 								$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
 								continue;
