@@ -381,6 +381,77 @@ class SpryDB extends Medoo
 				}
 			}
 
+			// Update Unique Indexes
+			if(!empty($fields))
+			{
+				foreach ($fields as $field)
+				{
+					$schema_field = (!empty($this->migration['schema']['tables'][$table_name]['columns'][$field['Field']]) ? $this->migration['schema']['tables'][$table_name]['columns'][$field['Field']] : []);
+
+					//$schema_field = $this->migration['schema']['tables'][$table_name]['columns'][$field['Field']];
+					if(!isset($schema_field['unique']))
+					{
+						$schema_field['unique'] = [];
+					}
+
+					if(!empty($schema_field['unique']) && !is_array($schema_field['unique']))
+					{
+						$schema_field['unique'] = [$field['Field']];
+					}
+
+					if(!empty($schema_field['unique']) && is_array($schema_field['unique']) && !in_array($field['Field'], $schema_field['unique']))
+					{
+						array_unshift($schema_field['unique'], $field['Field']);
+					}
+
+					$unique_fields = [];
+
+					$sql = 'SHOW INDEX FROM '.$this->prefix.$table_name." WHERE Key_name = '".$field['Field']."'";
+
+					if($result = $this->exec($sql))
+					{
+						foreach($result->fetchAll() as $row)
+						{
+							$unique_fields[] = $row['Column_name'];
+						}
+					}
+
+					if(implode(',', $unique_fields) !== implode(',', $schema_field['unique']))
+					{
+						$log_message = 'Update Unique Index ['.$this->prefix.$table_name.'.'.$field['Field'].']';
+
+						if($this->migration['options']['dryrun'])
+						{
+							$this->migration['logs'][] = '(DRYRUN): '.$log_message;
+							continue;
+						}
+
+						if( ! $this->migration['options']['destructive'])
+						{
+							$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
+							continue;
+						}
+
+						if(!empty($unique_fields))
+						{
+							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' DROP INDEX "'.$field['Field'].'"';
+							$drop_result = $this->exec($sql);
+						}
+
+						if(!empty($schema_field['unique']))
+						{
+							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' ADD UNIQUE KEY "'.$field['Field'].'" ("'.implode('","',$schema_field['unique']).'")';
+							$add_result = $this->exec($sql);
+						}
+
+						if(!empty($drop_result) || !empty($add_result))
+						{
+							$this->migration['logs'][] = $log_message;
+						}
+					}
+				}
+			}
+
 			// Delete Fields
 			if(!empty($fields))
 			{
@@ -485,74 +556,7 @@ class SpryDB extends Medoo
 				}
 			}
 
-			// Update Unique Indexes
-			if(!empty($fields))
-			{
-				foreach ($fields as $field)
-				{
-					$schema_field = $this->migration['schema']['tables'][$table_name]['columns'][$field['Field']];
-					if(!isset($schema_field['unique']))
-					{
-						$schema_field['unique'] = [];
-					}
 
-					if(!empty($schema_field['unique']) && !is_array($schema_field['unique']))
-					{
-						$schema_field['unique'] = [$field['Field']];
-					}
-
-					if(!empty($schema_field['unique']) && is_array($schema_field['unique']) && !in_array($field['Field'], $schema_field['unique']))
-					{
-						array_unshift($schema_field['unique'], $field['Field']);
-					}
-
-					$unique_fields = [];
-
-					$sql = 'SHOW INDEX FROM '.$this->prefix.$table_name." WHERE Key_name = '".$field['Field']."'";
-
-					if($result = $this->exec($sql))
-					{
-						foreach($result->fetchAll() as $row)
-						{
-							$unique_fields[] = $row['Column_name'];
-						}
-					}
-
-					if(implode(',', $unique_fields) !== implode(',', $schema_field['unique']))
-					{
-						$log_message = 'Update Unique Index ['.$this->prefix.$table_name.'.'.$field['Field'].']';
-
-						if($this->migration['options']['dryrun'])
-						{
-							$this->migration['logs'][] = '(DRYRUN): '.$log_message;
-							continue;
-						}
-
-						if( ! $this->migration['options']['destructive'])
-						{
-							$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
-							continue;
-						}
-
-						if(!empty($unique_fields))
-						{
-							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' DROP INDEX "'.$field['Field'].'"';
-							$drop_result = $this->exec($sql);
-						}
-
-						if(!empty($schema_field['unique']))
-						{
-							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' ADD UNIQUE KEY "'.$field['Field'].'" ("'.implode('","',$schema_field['unique']).'")';
-							$add_result = $this->exec($sql);
-						}
-
-						if(!empty($drop_result) || !empty($add_result))
-						{
-							$this->migration['logs'][] = $log_message;
-						}
-					}
-				}
-			}
 		}
 	}
 
