@@ -626,19 +626,19 @@ class SpryDB extends Medoo
 			case 'longstring':
 			case 'bigstring':
 
-				return 'varchar(255)';
+				return 'varchar(250)';
 
 			break;
 
 			case 'string':
 
-				return 'varchar(64)';
+				return 'varchar(90)';
 
 			break;
 
 			case 'tinystring':
 
-				return 'varchar(10)';
+				return 'varchar(20)';
 
 			break;
 		}
