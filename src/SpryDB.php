@@ -207,6 +207,15 @@ class SpryDB extends Medoo
 						$this->migration['schema']['tables'][$table_name]['columns'] = array_merge(['id' => $column_id], $this->migration['schema']['tables'][$table_name]['columns']);
 					}
 
+					// Set Default Test Data
+					if(!isset($table['columns']['test_data']) && (!isset($table['test_data']) || !empty($table['test_data'])))
+					{
+						$this->migration['schema']['tables'][$table_name]['columns']['test_data'] = [
+							'type' => 'tinyint',
+							'default' => 0
+						];
+					}
+
 					// Set Default Created On
 					if(!isset($table['columns']['created_at']) && (!isset($table['timestamps']) || !empty($table['timestamps'])))
 					{
@@ -223,15 +232,6 @@ class SpryDB extends Medoo
 							'type' => 'datetime',
 							'default' => 'now',
 							'update' => 'now'
-						];
-					}
-
-					// Set Default Test Data
-					if(!isset($table['columns']['test_data']) && (!isset($table['test_data']) || !empty($table['test_data'])))
-					{
-						$this->migration['schema']['tables'][$table_name]['columns']['test_data'] = [
-							'type' => 'tinyint',
-							'default' => 0
 						];
 					}
 				}
