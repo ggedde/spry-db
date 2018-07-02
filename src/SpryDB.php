@@ -147,6 +147,16 @@ class SpryDB extends Medoo
 		return '';
 	}
 
+	public function deleteTestData()
+	{
+		foreach($this->migrateTablesGet() as $table)
+		{
+			parent::delete($table, ['test_data' => 1]);
+		}
+
+		return true;
+	}
+
 	public function migrate($args = array('force' => null, 'dryrun' => false))
 	{
 		// Defaults
