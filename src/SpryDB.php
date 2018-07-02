@@ -57,6 +57,26 @@ class SpryDB extends Medoo
 		return $exec;
 	}
 
+	public function get($table, $join = null, $columns = null, $where = null)
+	{
+		if(isset($where['test_data']))
+		{
+			unset($where['test_data']);
+		}
+
+		return parent::get($table, $join, $columns, $where);
+	}
+
+	public function select($table, $join, $columns = null, $where = null)
+	{
+		if(isset($where['test_data']))
+		{
+			unset($where['test_data']);
+		}
+
+		return parent::select($table, $join, $columns, $where);
+	}
+
 	public function insert($table, $datas)
 	{
 		return parent::insert($table, $datas)->rowCount() ? true : null;
@@ -183,6 +203,15 @@ class SpryDB extends Medoo
 							'type' => 'datetime',
 							'default' => 'now',
 							'update' => 'now'
+						];
+					}
+
+					// Set Default Test Data
+					if(!isset($table['columns']['test_data']) && (!isset($table['test_data']) || !empty($table['test_data'])))
+					{
+						$this->migration['schema']['tables'][$table_name]['columns']['test_data'] = [
+							'type' => 'tinyint',
+							'default' => 0
 						];
 					}
 				}
