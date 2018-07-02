@@ -59,6 +59,11 @@ class SpryDB extends Medoo
 
 	public function get($table, $join = null, $columns = null, $where = null)
 	{
+		if(isset($columns['test_data']))
+		{
+			unset($columns['test_data']);
+		}
+
 		if(isset($where['test_data']))
 		{
 			unset($where['test_data']);
@@ -69,6 +74,11 @@ class SpryDB extends Medoo
 
 	public function select($table, $join, $columns = null, $where = null)
 	{
+		if(isset($columns['test_data']))
+		{
+			unset($columns['test_data']);
+		}
+
 		if(isset($where['test_data']))
 		{
 			unset($where['test_data']);
