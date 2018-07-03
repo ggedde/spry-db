@@ -89,17 +89,32 @@ class SpryDB extends Medoo
 
 	public function insert($table, $datas)
 	{
+		if(Spry::is_test())
+		{
+			$datas['test_data'] = 1;
+		}
+
 		return parent::insert($table, $datas)->rowCount() ? true : null;
 	}
 
 	public function update($table, $data, $where = null)
 	{
+		if(Spry::is_test())
+		{
+			$where['test_data'] = 1;
+		}
+
 		$update = parent::update($table, $data, $where)->rowCount();
 		return ($update || ($update === 0 && !$this->hasError())) ? true : null;
 	}
 
 	public function delete($table, $where)
 	{
+		if(Spry::is_test())
+		{
+			$where['test_data'] = 1;
+		}
+
 		return parent::delete($table, $where)->rowCount() ? true : null;
 	}
 
