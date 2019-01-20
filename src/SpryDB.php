@@ -187,7 +187,8 @@ class SpryDB extends Medoo
 		// Defaults
 		$options = array(
 			'force' => false,
-			'dryrun' => false
+			'dryrun' => false,
+			'debug' => false
 		);
 
 		if(isset($args) && is_array($args))
@@ -313,6 +314,15 @@ class SpryDB extends Medoo
 			{
 				$log_message = 'Dropped Table ['.$table_name.']';
 
+				$sql = 'DROP TABLE '.$table_name;
+
+				if($this->migration['options']['debug'])
+				{
+					$this->migration['logs'][] = '(DEBUG): '.$log_message;
+					$this->migration['logs'][] = '(SQL): '.$sql;
+					continue;
+				}
+
 				if($this->migration['options']['dryrun'])
 				{
 					$this->migration['logs'][] = '(DRYRUN): '.$log_message;
@@ -325,7 +335,6 @@ class SpryDB extends Medoo
 					continue;
 				}
 
-				$sql = 'DROP TABLE '.$table_name;
 				$result = $this->exec($sql);
 
 				if($result || $result === 0 || $result === '0')
@@ -359,6 +368,16 @@ class SpryDB extends Medoo
 
 			$log_message = 'Created Table ['.$table_name.']';
 
+			// Add Table Sql
+			$sql = 'CREATE TABLE IF NOT EXISTS '.$table_name;
+
+			if($this->migration['options']['debug'])
+			{
+				$this->migration['logs'][] = '(DEBUG): '.$log_message;
+				$this->migration['logs'][] = '(SQL): '.$sql;
+				continue;
+			}
+
 			if(empty($table['columns']))
 			{
 				$this->migration['logs'][] = 'Error: '.$log_message.'. No Columns Specified.';
@@ -370,9 +389,6 @@ class SpryDB extends Medoo
 				$this->migration['logs'][] = '(DRYRUN): '.$log_message;
 				continue;
 			}
-
-			// Add Table
-			$sql = 'CREATE TABLE IF NOT EXISTS '.$table_name;
 
 			$field_values = [];
 
@@ -420,14 +436,20 @@ class SpryDB extends Medoo
 					if( ! in_array($field_name, $this->migrateColumnsGet($this->prefix.$table_name, true)))
 					{
 						$log_message = 'Created Column ['.$this->prefix.$table_name.'.'.$field_name.']';
+						$sql = 'ALTER TABLE '.$this->prefix.$table_name.' ADD COLUMN '.$field_name.' '.$this->migrateFieldValues($field);
+
+						if($this->migration['options']['debug'])
+						{
+							$this->migration['logs'][] = '(DEBUG): '.$log_message;
+							$this->migration['logs'][] = '(SQL): '.$sql;
+							continue;
+						}
 
 						if($this->migration['options']['dryrun'])
 						{
 							$this->migration['logs'][] = '(DRYRUN): '.$log_message;
 							continue;
 						}
-
-						$sql = 'ALTER TABLE '.$this->prefix.$table_name.' ADD COLUMN '.$field_name.' '.$this->migrateFieldValues($field);
 
 						$result = $this->exec($sql);
 
@@ -484,18 +506,6 @@ class SpryDB extends Medoo
 					{
 						$log_message = 'Update Unique Index ['.$this->prefix.$table_name.'.'.$field['Field'].']';
 
-						if($this->migration['options']['dryrun'])
-						{
-							$this->migration['logs'][] = '(DRYRUN): '.$log_message;
-							continue;
-						}
-
-						if( ! $this->migration['options']['force'])
-						{
-							$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
-							continue;
-						}
-
 						if(!empty($unique_fields))
 						{
 							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' DROP INDEX "'.$field['Field'].'"';
@@ -506,6 +516,25 @@ class SpryDB extends Medoo
 						{
 							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' ADD UNIQUE KEY "'.$field['Field'].'" ("'.implode('","',$schema_field['unique']).'")';
 							$add_result = $this->exec($sql);
+						}
+
+						if($this->migration['options']['debug'])
+						{
+							$this->migration['logs'][] = '(DEBUG): '.$log_message;
+							$this->migration['logs'][] = '(SQL): '.$sql;
+							continue;
+						}
+
+						if($this->migration['options']['dryrun'])
+						{
+							$this->migration['logs'][] = '(DRYRUN): '.$log_message;
+							continue;
+						}
+
+						if( ! $this->migration['options']['force'])
+						{
+							$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
+							continue;
 						}
 
 						if(!empty($drop_result) || !empty($add_result))
@@ -524,6 +553,14 @@ class SpryDB extends Medoo
 					if(isset($field['Field']) && !isset($this->migration['schema']['tables'][$table_name]['columns'][$field['Field']]))
 					{
 						$log_message = 'Dropped Column ['.$this->prefix.$table_name.'.'.$field['Field'].']';
+						$sql = 'ALTER TABLE '.$this->prefix.$table_name.' DROP COLUMN '.$field['Field'];
+
+						if($this->migration['options']['debug'])
+						{
+							$this->migration['logs'][] = '(DEBUG): '.$log_message;
+							$this->migration['logs'][] = '(SQL): '.$sql;
+							continue;
+						}
 
 						if($this->migration['options']['dryrun'])
 						{
@@ -536,8 +573,6 @@ class SpryDB extends Medoo
 							$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
 							continue;
 						}
-
-						$sql = 'ALTER TABLE '.$this->prefix.$table_name.' DROP COLUMN '.$field['Field'];
 
 						$result = $this->exec($sql);
 
@@ -587,6 +622,14 @@ class SpryDB extends Medoo
 						if(!$type_match || !$null_match || !$default_match)
 						{
 							$log_message = 'Update Column ['.$this->prefix.$table_name.'.'.$field['Field'].'] '.$this->migrateFieldValues($schema_field);
+							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' MODIFY '.$field['Field'].' '.$this->migrateFieldValues($schema_field);
+
+							if($this->migration['options']['debug'])
+							{
+								$this->migration['logs'][] = '(DEBUG): '.$log_message;
+								$this->migration['logs'][] = '(SQL): '.$sql;
+								continue;
+							}
 
 							if($this->migration['options']['dryrun'])
 							{
@@ -599,8 +642,6 @@ class SpryDB extends Medoo
 								$this->migration['logs'][] = '(IGNORED DESTRUCTIVE): '.$log_message;
 								continue;
 							}
-
-							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' MODIFY '.$field['Field'].' '.$this->migrateFieldValues($schema_field);
 
 							$result = $this->exec($sql);
 
