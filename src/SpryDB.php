@@ -182,7 +182,7 @@ class SpryDB extends Medoo
 		return true;
 	}
 
-	public function migrate($args = array('force' => null, 'dryrun' => false))
+	public function migrate($args = array('force' => null, 'dryrun' => false, 'debug' => false))
 	{
 		// Defaults
 		$options = array(
