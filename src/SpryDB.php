@@ -375,7 +375,7 @@ class SpryDB extends Medoo
 
 			foreach ($table['columns'] as $field_name => $field)
 			{
-				$field_values[] = $field_name.' '.$this->migrateFieldValues($field);
+				$field_values[] = '"'.$field_name.'" '.$this->migrateFieldValues($field);
 			}
 
 			$sql.= ' ('.implode(', ', $field_values).')';
@@ -436,7 +436,7 @@ class SpryDB extends Medoo
 					if( ! in_array($field_name, $this->migrateColumnsGet($this->prefix.$table_name, true)))
 					{
 						$log_message = 'Created Column ['.$this->prefix.$table_name.'.'.$field_name.']';
-						$sql = 'ALTER TABLE '.$this->prefix.$table_name.' ADD COLUMN '.$field_name.' '.$this->migrateFieldValues($field);
+						$sql = 'ALTER TABLE '.$this->prefix.$table_name.' ADD COLUMN "'.$field_name.'" '.$this->migrateFieldValues($field);
 
 						if($this->migration['options']['debug'])
 						{
