@@ -378,7 +378,7 @@ class SpryDB extends Medoo
 				$field_values[] = $field_name.' '.$this->migrateFieldValues($field);
 			}
 
-			$sql.= '('.implode(', ', $field_values).')';
+			$sql.= ' ('.implode(', ', $field_values).')';
 
 			if($this->migration['options']['debug'])
 			{
