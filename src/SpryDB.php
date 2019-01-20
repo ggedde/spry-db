@@ -371,6 +371,15 @@ class SpryDB extends Medoo
 			// Add Table Sql
 			$sql = 'CREATE TABLE IF NOT EXISTS '.$table_name;
 
+			$field_values = [];
+
+			foreach ($table['columns'] as $field_name => $field)
+			{
+				$field_values[] = $field_name.' '.$this->migrateFieldValues($field);
+			}
+
+			$sql.= '('.implode(', ', $field_values).')';
+
 			if($this->migration['options']['debug'])
 			{
 				$this->migration['logs'][] = '(DEBUG): '.$log_message;
@@ -389,15 +398,6 @@ class SpryDB extends Medoo
 				$this->migration['logs'][] = '(DRYRUN): '.$log_message;
 				continue;
 			}
-
-			$field_values = [];
-
-			foreach ($table['columns'] as $field_name => $field)
-			{
-				$field_values[] = $field_name.' '.$this->migrateFieldValues($field);
-			}
-
-			$sql.= '('.implode(', ', $field_values).')';
 
 			$this->exec($sql);
 
