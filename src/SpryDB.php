@@ -319,7 +319,7 @@ class SpryDB extends Medoo
 				if($this->migration['options']['debug'])
 				{
 					$this->migration['logs'][] = '(DEBUG): '.$log_message;
-					$this->migration['logs'][] = '(SQL): '.$sql;
+					$this->migration['logs'][] = '(SQL): '.($this->type === 'mysql' ? str_replace('"', '`', $sql) : $sql);
 					continue;
 				}
 
@@ -383,7 +383,7 @@ class SpryDB extends Medoo
 			if($this->migration['options']['debug'])
 			{
 				$this->migration['logs'][] = '(DEBUG): '.$log_message;
-				$this->migration['logs'][] = '(SQL): '.$sql;
+				$this->migration['logs'][] = '(SQL): '.($this->type === 'mysql' ? str_replace('"', '`', $sql) : $sql);
 				continue;
 			}
 
@@ -441,7 +441,7 @@ class SpryDB extends Medoo
 						if($this->migration['options']['debug'])
 						{
 							$this->migration['logs'][] = '(DEBUG): '.$log_message;
-							$this->migration['logs'][] = '(SQL): '.$sql;
+							$this->migration['logs'][] = '(SQL): '.($this->type === 'mysql' ? str_replace('"', '`', $sql) : $sql);
 							continue;
 						}
 
@@ -521,7 +521,7 @@ class SpryDB extends Medoo
 						if($this->migration['options']['debug'])
 						{
 							$this->migration['logs'][] = '(DEBUG): '.$log_message;
-							$this->migration['logs'][] = '(SQL): '.$sql;
+							$this->migration['logs'][] = '(SQL): '.($this->type === 'mysql' ? str_replace('"', '`', $sql) : $sql);
 							continue;
 						}
 
@@ -553,12 +553,12 @@ class SpryDB extends Medoo
 					if(isset($field['Field']) && !isset($this->migration['schema']['tables'][$table_name]['columns'][$field['Field']]))
 					{
 						$log_message = 'Dropped Column ['.$this->prefix.$table_name.'.'.$field['Field'].']';
-						$sql = 'ALTER TABLE '.$this->prefix.$table_name.' DROP COLUMN '.$field['Field'];
+						$sql = 'ALTER TABLE '.$this->prefix.$table_name.' DROP COLUMN "'.$field['Field'].'"';
 
 						if($this->migration['options']['debug'])
 						{
 							$this->migration['logs'][] = '(DEBUG): '.$log_message;
-							$this->migration['logs'][] = '(SQL): '.$sql;
+							$this->migration['logs'][] = '(SQL): '.($this->type === 'mysql' ? str_replace('"', '`', $sql) : $sql);
 							continue;
 						}
 
@@ -622,12 +622,12 @@ class SpryDB extends Medoo
 						if(!$type_match || !$null_match || !$default_match)
 						{
 							$log_message = 'Update Column ['.$this->prefix.$table_name.'.'.$field['Field'].'] '.$this->migrateFieldValues($schema_field);
-							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' MODIFY '.$field['Field'].' '.$this->migrateFieldValues($schema_field);
+							$sql = 'ALTER TABLE '.$this->prefix.$table_name.' MODIFY "'.$field['Field'].'" '.$this->migrateFieldValues($schema_field);
 
 							if($this->migration['options']['debug'])
 							{
 								$this->migration['logs'][] = '(DEBUG): '.$log_message;
-								$this->migration['logs'][] = '(SQL): '.$sql;
+								$this->migration['logs'][] = '(SQL): '.($this->type === 'mysql' ? str_replace('"', '`', $sql) : $sql);
 								continue;
 							}
 
