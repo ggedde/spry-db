@@ -46,7 +46,7 @@ class SpryDB extends Medoo
 
             parent::__construct($options);
         } catch (PDOException $e) {
-            Spry::stop(5031, null, $e->getMessage());
+            Spry::stop(531, null, $e->getMessage());
         }
     }
 
@@ -67,7 +67,7 @@ class SpryDB extends Medoo
         $query = parent::query($query, $map);
 
         if ($this->hasError()) {
-            Spry::stop(5031, null, $this->errorMessage().' - SQLCode: ('.$this->errorCode().')');
+            Spry::stop(531, null, $this->errorMessage().' - SQLCode: ('.$this->errorCode().')');
         }
 
         return $query;
@@ -90,7 +90,7 @@ class SpryDB extends Medoo
         $exec = parent::exec($query, $map);
 
         if ($this->hasError()) {
-            Spry::stop(5031, null, $this->errorMessage().'  - SQLCode: ('.$this->errorCode().')');
+            Spry::stop(531, null, $this->errorMessage().'  - SQLCode: ('.$this->errorCode().')');
         }
 
         return $exec;
