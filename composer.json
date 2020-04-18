@@ -4,7 +4,7 @@
     "type": "spry-provider",
     "require": {
         "php": ">=5.4.0",
-        "catfan/medoo": "~v1.5.3"
+        "catfan/medoo": "~v1.7.10"
     },
     "license": "MIT",
     "authors": [

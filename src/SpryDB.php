@@ -28,6 +28,9 @@ class SpryDB extends Medoo
 
 
 
+    protected $dbMeta = [];
+
+
     /**
      * DB constructor
      *
@@ -48,6 +51,23 @@ class SpryDB extends Medoo
         } catch (PDOException $e) {
             Spry::stop(531, null, $e->getMessage());
         }
+    }
+
+
+     /**
+     * Sets Meta settings and returns the DB Object
+     *
+     * @param array $meta
+     *
+     * @access public
+     *
+     * @return void
+     */
+    public function meta($meta = [])
+    {
+        $this->dbMeta = $meta;
+
+        return $this;
     }
 
 
@@ -122,7 +142,9 @@ class SpryDB extends Medoo
             unset($where['test_data']);
         }
 
-        return parent::get($table, $join, $columns, $where);
+        $getObj = Spry::runFilter('dbGet', (object) ['table' => $table, 'join' => $join, 'columns' => $columns, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        return parent::get($getObj->table, $getObj->join, $getObj->columns, $getObj->where);
     }
 
 
@@ -151,7 +173,9 @@ class SpryDB extends Medoo
             unset($where['test_data']);
         }
 
-        return parent::select($table, $join, $columns, $where);
+        $selectObj = Spry::runFilter('dbSelect', (object) ['table' => $table, 'join' => $join, 'columns' => $columns, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        return parent::select($selectObj->table, $selectObj->join, $selectObj->columns, $selectObj->where);
     }
 
 
@@ -161,19 +185,21 @@ class SpryDB extends Medoo
      * https://medoo.in/api/insert
      *
      * @param string $table
-     * @param array  $datas
+     * @param array  $data
      *
      * @access public
      *
      * @return boolean
      */
-    public function insert($table, $datas)
+    public function insert($table, $data)
     {
         if (Spry::isTest()) {
             $datas['test_data'] = 1;
         }
 
-        return parent::insert($table, $datas)->rowCount() ? true : null;
+        $insertObj = Spry::runFilter('dbInsert', (object) ['table' => $table, 'data' => $data, 'meta' => $this->dbMeta]);
+
+        return parent::insert($insertObj->table, $insertObj->data)->rowCount() ? true : null;
     }
 
 
@@ -197,7 +223,9 @@ class SpryDB extends Medoo
             $where['test_data'] = 1;
         }
 
-        $update = parent::update($table, $data, $where)->rowCount();
+        $updateObj = Spry::runFilter('dbUpdate', (object) ['table' => $table, 'data' => $data, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        $update = parent::update($updateObj->table, $updateObj->data, $updateObj->where)->rowCount();
 
         return ($update || ($update === 0 && !$this->hasError())) ? true : null;
     }
@@ -222,7 +250,9 @@ class SpryDB extends Medoo
             $where['test_data'] = 1;
         }
 
-        return parent::delete($table, $where)->rowCount() ? true : null;
+        $deleteObj = Spry::runFilter('dbDelete', (object) ['table' => $table, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        return parent::delete($deleteObj->table, $deleteObj->where)->rowCount() ? true : null;
     }
 
 
@@ -242,9 +272,171 @@ class SpryDB extends Medoo
      */
     public function replace($table, $columns, $where = null)
     {
-        $replace = parent::replace($table, $columns, $where)->rowCount();
+        $replaceObj = Spry::runFilter('dbReplace', (object) ['table' => $table, 'columns' => $columns, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        $replace = parent::replace($replaceObj->table, $replaceObj->columns, $replaceObj->where)->rowCount();
 
         return ($replace || ($replace === 0 && !$this->hasError())) ? true : null;
+    }
+
+
+
+    /**
+     * See if table has data
+     * See Medoo for full instructions:
+     * https://medoo.in/api/has
+     *
+     * @param string $table
+     * @param array  $join
+     * @param array  $where
+     *
+     * @access public
+     *
+     * @return boolean
+     */
+    public function has($table, $join, $where = null)
+    {
+        $hasObj = Spry::runFilter('dbHas', (object) ['table' => $table, 'join' => $join, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        return parent::has($hasObj->table, $hasObj->join, $hasObj->where);
+    }
+
+
+
+    /**
+     * Get Random Data
+     * See Medoo for full instructions:
+     * https://medoo.in/api/rand
+     *
+     * @param string $table
+     * @param array  $join
+     * @param array  $columns
+     * @param array  $where
+     *
+     * @access public
+     *
+     * @return array
+     */
+    public function rand($table, $join = null, $columns = null, $where = null)
+    {
+        $randObj = Spry::runFilter('dbRand', (object) ['table' => $table, 'join' => $join, 'columns' => $columns, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        return parent::rand($randObj->table, $randObj->join, $randObj->columns, $randObj->where);
+    }
+
+
+
+    /**
+     * Count Data from the Table
+     * See Medoo for full instructions:
+     * https://medoo.in/api/count
+     *
+     * @param string $table
+     * @param array  $join
+     * @param array  $column
+     * @param array  $where
+     *
+     * @access public
+     *
+     * @return array
+     */
+    public function count($table, $join = null, $column = null, $where = null)
+    {
+        $countObj = Spry::runFilter('dbCount', (object) ['table' => $table, 'join' => $join, 'column' => $column, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        return parent::count($countObj->table, $countObj->join, $countObj->column, $countObj->where);
+    }
+
+
+
+    /**
+     * Get Avg from a column in the Table
+     * See Medoo for full instructions:
+     * https://medoo.in/api/avg
+     *
+     * @param string $table
+     * @param array  $join
+     * @param array  $column
+     * @param array  $where
+     *
+     * @access public
+     *
+     * @return array
+     */
+    public function avg($table, $join, $column = null, $where = null)
+    {
+        $avgObj = Spry::runFilter('dbAvg', (object) ['table' => $table, 'join' => $join, 'column' => $column, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        return parent::avg($avgObj->table, $avgObj->join, $avgObj->column, $avgObj->where);
+    }
+
+
+
+    /**
+     * Ge the Max
+     * See Medoo for full instructions:
+     * https://medoo.in/api/max
+     *
+     * @param string $table
+     * @param array  $join
+     * @param array  $column
+     * @param array  $where
+     *
+     * @access public
+     *
+     * @return array
+     */
+    public function max($table, $join, $column = null, $where = null)
+    {
+        $maxObj = Spry::runFilter('dbMax', (object) ['table' => $table, 'join' => $join, 'column' => $column, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        return parent::max($maxObj->table, $maxObj->join, $maxObj->column, $maxObj->where);
+    }
+
+
+
+    /**
+     * Ge the Min
+     * See Medoo for full instructions:
+     * https://medoo.in/api/min
+     *
+     * @param string $table
+     * @param array  $join
+     * @param array  $column
+     * @param array  $where
+     *
+     * @access public
+     *
+     * @return array
+     */
+    public function min($table, $join, $column = null, $where = null)
+    {
+        $minObj = Spry::runFilter('dbMin', (object) ['table' => $table, 'join' => $join, 'column' => $column, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        return parent::min($minObj->table, $minObj->join, $minObj->column, $minObj->where);
+    }
+
+
+
+    /**
+     * Ge the Sum
+     * See Medoo for full instructions:
+     * https://medoo.in/api/sum
+     *
+     * @param string $table
+     * @param array  $join
+     * @param array  $column
+     * @param array  $where
+     *
+     * @access public
+     *
+     * @return array
+     */
+    public function sum($table, $join, $column = null, $where = null)
+    {
+        $sumObj = Spry::runFilter('dbSum', (object) ['table' => $table, 'join' => $join, 'column' => $column, 'where' => $where, 'meta' => $this->dbMeta]);
+
+        return parent::sum($sumObj->table, $sumObj->join, $sumObj->column, $sumObj->where);
     }
 
 
