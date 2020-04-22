@@ -685,7 +685,7 @@ class SpryDB extends Medoo
                 $columnKey = is_array($columns) ? array_keys($columns) : null;
                 if (isset($columnKey[0]) && is_string($columnKey[0])) { // Columns is Where
                     $where = $columns;
-                    $columns = null;
+                    $columns = $join;
                 }
             }
             $join = null;
