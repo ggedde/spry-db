@@ -134,15 +134,8 @@ class SpryDB extends Medoo
      */
     public function get($table, $join = null, $columns = null, $where = null)
     {
-        if (isset($columns['test_data'])) {
-            unset($columns['test_data']);
-        }
-
-        if (isset($where['test_data'])) {
-            unset($where['test_data']);
-        }
-
-        $getObj = Spry::runFilter('dbGet', (object) ['table' => $table, 'join' => $join, 'columns' => $columns, 'where' => $where, 'meta' => $this->dbMeta]);
+        $getObj = $this->buildSelectObj($table, $join, $columns, $where);
+        $getObj = Spry::runFilter('dbGet', $getObj);
 
         return parent::get($getObj->table, $getObj->join, $getObj->columns, $getObj->where);
     }
@@ -165,15 +158,8 @@ class SpryDB extends Medoo
      */
     public function select($table, $join, $columns = null, $where = null)
     {
-        if (isset($columns['test_data'])) {
-            unset($columns['test_data']);
-        }
-
-        if (isset($where['test_data'])) {
-            unset($where['test_data']);
-        }
-
-        $selectObj = Spry::runFilter('dbSelect', (object) ['table' => $table, 'join' => $join, 'columns' => $columns, 'where' => $where, 'meta' => $this->dbMeta]);
+        $selectObj = $this->buildSelectObj($table, $join, $columns, $where);
+        $selectObj = Spry::runFilter('dbSelect', $selectObj);
 
         return parent::select($selectObj->table, $selectObj->join, $selectObj->columns, $selectObj->where);
     }
@@ -657,6 +643,55 @@ class SpryDB extends Medoo
         $this->migrateCheckErrors($sql);
 
         return [];
+    }
+
+    /**
+     * Filters the Select arguments
+     * See Medoo for full instructions:
+     * https://medoo.in/api/select
+     *
+     * @param string     $table
+     * @param array|null $join
+     * @param array|null $columns
+     * @param array|null $where
+     *
+     * @return object
+     */
+    private function buildSelectObj($table, $join = null, $columns = null, $where = null)
+    {
+        $joinKey = is_array($join) ? array_keys($join) : null;
+        $isJoin = false;
+        if (isset($joinKey[0]) && strpos(trim($joinKey[0]), '[') === 0) {
+            $isJoin = true;
+        }
+
+        if (!is_null($join) && !$isJoin) {
+            if (is_null($columns) && is_null($where)) {
+                if (isset($joinKey[0]) && is_int($joinKey[0])) { // Join is Columns
+                    $where = $columns;
+                    $columns = $join;
+                } elseif (isset($joinKey[0]) && is_string($joinKey[0])) { // Join is Where
+                    $where = $join;
+                }
+            } elseif (is_null($where)) {
+                $columnKey = is_array($columns) ? array_keys($columns) : null;
+                if (isset($columnKey[0]) && is_string($columnKey[0])) { // Columns is Where
+                    $where = $columns;
+                    $columns = null;
+                }
+            }
+            $join = null;
+        }
+
+        if (isset($columns['test_data'])) {
+            unset($columns['test_data']);
+        }
+
+        if (isset($where['test_data'])) {
+            unset($where['test_data']);
+        }
+
+        return (object) ['table' => $table, 'join' => $join, 'columns' => $columns, 'where' => $where, 'meta' => $this->dbMeta];
     }
 
 
