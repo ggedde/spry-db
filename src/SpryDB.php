@@ -282,7 +282,8 @@ class SpryDB extends Medoo
      */
     public function has($table, $join, $where = null)
     {
-        $hasObj = Spry::runFilter('dbHas', (object) ['table' => $table, 'join' => $join, 'where' => $where, 'meta' => $this->dbMeta]);
+        $hasObj = $this->buildHasObj($table, $join, $where);
+        $hasObj = Spry::runFilter('dbHas', $hasObj);
 
         return parent::has($hasObj->table, $hasObj->join, $hasObj->where);
     }
@@ -305,7 +306,8 @@ class SpryDB extends Medoo
      */
     public function rand($table, $join = null, $columns = null, $where = null)
     {
-        $randObj = Spry::runFilter('dbRand', (object) ['table' => $table, 'join' => $join, 'columns' => $columns, 'where' => $where, 'meta' => $this->dbMeta]);
+        $randObj = $this->buildSelectObj($table, $join, $columns, $where);
+        $randObj = Spry::runFilter('dbRand', $randObj);
 
         return parent::rand($randObj->table, $randObj->join, $randObj->columns, $randObj->where);
     }
@@ -328,7 +330,8 @@ class SpryDB extends Medoo
      */
     public function count($table, $join = null, $column = null, $where = null)
     {
-        $countObj = Spry::runFilter('dbCount', (object) ['table' => $table, 'join' => $join, 'column' => $column, 'where' => $where, 'meta' => $this->dbMeta]);
+        $countObj = $this->buildSelectObj($table, $join, $column, $where, true);
+        $countObj = Spry::runFilter('dbCount', $countObj);
 
         return parent::count($countObj->table, $countObj->join, $countObj->column, $countObj->where);
     }
@@ -351,7 +354,8 @@ class SpryDB extends Medoo
      */
     public function avg($table, $join, $column = null, $where = null)
     {
-        $avgObj = Spry::runFilter('dbAvg', (object) ['table' => $table, 'join' => $join, 'column' => $column, 'where' => $where, 'meta' => $this->dbMeta]);
+        $avgObj = $this->buildSelectObj($table, $join, $column, $where, true);
+        $avgObj = Spry::runFilter('dbAvg', $avgObj);
 
         return parent::avg($avgObj->table, $avgObj->join, $avgObj->column, $avgObj->where);
     }
@@ -374,7 +378,8 @@ class SpryDB extends Medoo
      */
     public function max($table, $join, $column = null, $where = null)
     {
-        $maxObj = Spry::runFilter('dbMax', (object) ['table' => $table, 'join' => $join, 'column' => $column, 'where' => $where, 'meta' => $this->dbMeta]);
+        $maxObj = $this->buildSelectObj($table, $join, $column, $where, true);
+        $maxObj = Spry::runFilter('dbMax', $maxObj);
 
         return parent::max($maxObj->table, $maxObj->join, $maxObj->column, $maxObj->where);
     }
@@ -397,7 +402,8 @@ class SpryDB extends Medoo
      */
     public function min($table, $join, $column = null, $where = null)
     {
-        $minObj = Spry::runFilter('dbMin', (object) ['table' => $table, 'join' => $join, 'column' => $column, 'where' => $where, 'meta' => $this->dbMeta]);
+        $minObj = $this->buildSelectObj($table, $join, $column, $where, true);
+        $minObj = Spry::runFilter('dbMin', $minObj);
 
         return parent::min($minObj->table, $minObj->join, $minObj->column, $minObj->where);
     }
@@ -420,7 +426,8 @@ class SpryDB extends Medoo
      */
     public function sum($table, $join, $column = null, $where = null)
     {
-        $sumObj = Spry::runFilter('dbSum', (object) ['table' => $table, 'join' => $join, 'column' => $column, 'where' => $where, 'meta' => $this->dbMeta]);
+        $sumObj = $this->buildSelectObj($table, $join, $column, $where, true);
+        $sumObj = Spry::runFilter('dbSum', $sumObj);
 
         return parent::sum($sumObj->table, $sumObj->join, $sumObj->column, $sumObj->where);
     }
@@ -654,10 +661,11 @@ class SpryDB extends Medoo
      * @param array|null $join
      * @param array|null $columns
      * @param array|null $where
+     * @param boolean    $isAggregate
      *
      * @return object
      */
-    private function buildSelectObj($table, $join = null, $columns = null, $where = null)
+    private function buildSelectObj($table, $join = null, $columns = null, $where = null, $isAggregate = false)
     {
         $joinKey = is_array($join) ? array_keys($join) : null;
         $isJoin = false;
@@ -691,7 +699,40 @@ class SpryDB extends Medoo
             unset($where['test_data']);
         }
 
-        return (object) ['table' => $table, 'join' => $join, 'columns' => $columns, 'where' => $where, 'meta' => $this->dbMeta];
+        return (object) ['table' => $table, 'join' => $join, ($isAggregate ? 'column' : 'columns') => $columns, 'where' => $where, 'meta' => $this->dbMeta];
+    }
+
+
+
+    /**
+     * Filters the Select arguments
+     * See Medoo for full instructions:
+     * https://medoo.in/api/select
+     *
+     * @param string     $table
+     * @param array|null $join
+     * @param array|null $where
+     *
+     * @return object
+     */
+    private function buildHasObj($table, $join = null, $where = null)
+    {
+        $joinKey = is_array($join) ? array_keys($join) : null;
+        $isJoin = false;
+        if (isset($joinKey[0]) && strpos(trim($joinKey[0]), '[') === 0) {
+            $isJoin = true;
+        }
+
+        if (!is_null($join) && !$isJoin) {
+            $where = $join;
+            $join = null;
+        }
+
+        if (isset($where['test_data'])) {
+            unset($where['test_data']);
+        }
+
+        return (object) ['table' => $table, 'join' => $join, 'where' => $where, 'meta' => $this->dbMeta];
     }
 
 
