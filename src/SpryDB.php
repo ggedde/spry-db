@@ -110,7 +110,7 @@ class SpryDB extends Medoo
         $exec = parent::exec($query, $map);
 
         if ($this->hasError()) {
-            Spry::stop(31, null, null, null, $this->errorMessage().'  - SQLCode: ('.$this->errorCode().')');
+            Spry::stop(31, null, null, null, $this->errorMessage().'  - SQLCode: ('.$this->errorCode().') - '.$this->last());
         }
 
         return $exec;
@@ -134,7 +134,7 @@ class SpryDB extends Medoo
      */
     public function get($table, $join = null, $columns = null, $where = null)
     {
-        $getObj = $this->buildSelectObj($table, $join, $columns, $where);
+        $getObj = $this->buildSelectObj('get', $table, $join, $columns, $where);
         $getObj = Spry::runFilter('dbGet', $getObj);
 
         return parent::get($getObj->table, $getObj->join, $getObj->columns, $getObj->where);
@@ -158,7 +158,7 @@ class SpryDB extends Medoo
      */
     public function select($table, $join, $columns = null, $where = null)
     {
-        $selectObj = $this->buildSelectObj($table, $join, $columns, $where);
+        $selectObj = $this->buildSelectObj('select', $table, $join, $columns, $where);
         $selectObj = Spry::runFilter('dbSelect', $selectObj);
 
         return parent::select($selectObj->table, $selectObj->join, $selectObj->columns, $selectObj->where);
@@ -182,6 +182,8 @@ class SpryDB extends Medoo
         if (Spry::isTest()) {
             $datas['test_data'] = 1;
         }
+
+        $data = Spry::runFilter('dbData', $data, (object) ['method' => 'insert', 'table' => $table, 'meta' => $this->dbMeta]);
 
         $insertObj = Spry::runFilter('dbInsert', (object) ['table' => $table, 'data' => $data, 'meta' => $this->dbMeta]);
 
@@ -208,6 +210,9 @@ class SpryDB extends Medoo
         if (Spry::isTest()) {
             $where['test_data'] = 1;
         }
+
+        $data = Spry::runFilter('dbData', $data, (object) ['method' => 'update', 'table' => $table, 'meta' => $this->dbMeta]);
+        $where = Spry::runFilter('dbWhere', $where, (object) ['method' => 'update', 'table' => $table, 'meta' => $this->dbMeta]);
 
         $updateObj = Spry::runFilter('dbUpdate', (object) ['table' => $table, 'data' => $data, 'where' => $where, 'meta' => $this->dbMeta]);
 
@@ -236,6 +241,8 @@ class SpryDB extends Medoo
             $where['test_data'] = 1;
         }
 
+        $where = Spry::runFilter('dbWhere', $where, (object) ['method' => 'delete', 'table' => $table, 'meta' => $this->dbMeta]);
+
         $deleteObj = Spry::runFilter('dbDelete', (object) ['table' => $table, 'where' => $where, 'meta' => $this->dbMeta]);
 
         return parent::delete($deleteObj->table, $deleteObj->where)->rowCount() ? true : null;
@@ -258,6 +265,9 @@ class SpryDB extends Medoo
      */
     public function replace($table, $columns, $where = null)
     {
+        $columns = Spry::runFilter('dbColumns', $columns, (object) ['method' => 'replace', 'table' => $table, 'meta' => $this->dbMeta]);
+        $where = Spry::runFilter('dbWhere', $where, (object) ['method' => 'replace', 'table' => $table, 'meta' => $this->dbMeta]);
+
         $replaceObj = Spry::runFilter('dbReplace', (object) ['table' => $table, 'columns' => $columns, 'where' => $where, 'meta' => $this->dbMeta]);
 
         $replace = parent::replace($replaceObj->table, $replaceObj->columns, $replaceObj->where)->rowCount();
@@ -652,11 +662,14 @@ class SpryDB extends Medoo
         return [];
     }
 
+
+
     /**
      * Filters the Select arguments
      * See Medoo for full instructions:
      * https://medoo.in/api/select
      *
+     * @param string     $method
      * @param string     $table
      * @param array|null $join
      * @param array|null $columns
@@ -665,30 +678,39 @@ class SpryDB extends Medoo
      *
      * @return object
      */
-    private function buildSelectObj($table, $join = null, $columns = null, $where = null, $isAggregate = false)
+    private function buildSelectObj($method, $table, $join = null, $columns = null, $where = null, $isAggregate = false)
     {
         $joinKey = is_array($join) ? array_keys($join) : null;
+
+        if (is_null($join) || isset($joinKey[0]) && strpos(trim($joinKey[0]), '[') === 0) {
+            $join = Spry::runFilter('dbJoin', $join, (object) ['method' => 'has', 'table' => $table, 'meta' => $this->dbMeta]);
+        }
+
+        $joinKey = is_array($join) ? array_keys($join) : null;
+        $columnKey = is_array($columns) ? array_keys($columns) : null;
         $isJoin = false;
         if (isset($joinKey[0]) && strpos(trim($joinKey[0]), '[') === 0) {
             $isJoin = true;
         }
 
-        if (!is_null($join) && !$isJoin) {
-            if (is_null($columns) && is_null($where)) {
-                if (isset($joinKey[0]) && is_int($joinKey[0])) { // Join is Columns
-                    $where = $columns;
-                    $columns = $join;
-                } elseif (isset($joinKey[0]) && is_string($joinKey[0])) { // Join is Where
-                    $where = $join;
-                }
-            } elseif (is_null($where)) {
-                $columnKey = is_array($columns) ? array_keys($columns) : null;
-                if (isset($columnKey[0]) && is_string($columnKey[0])) { // Columns is Where
-                    $where = $columns;
-                    $columns = $join;
-                }
+        $newArgs = [
+            'method' => $method,
+            'table' => $table,
+            'meta' => $this->dbMeta,
+        ];
+
+        if (!$isJoin && isset($joinKey[0]) && is_string($joinKey[0])) { // Join is where
+            $join = Spry::runFilter('dbWhere', $join, (object) ['method' => $method, 'table' => $table, 'meta' => $this->dbMeta]);
+        } elseif (isset($columnKey[0]) && is_string($columnKey[0])) { // columns is where
+            $columns = Spry::runFilter('dbWhere', $columns, $newArgs);
+        }
+
+        if (!$isJoin && (is_string($join) || (isset($joinKey[0]) && is_int($joinKey[0])))) { // Join is Columns
+            $join = Spry::runFilter('dbColumns', $join, (object) ['method' => $method, 'table' => $table, 'meta' => $this->dbMeta]);
+
+            if (is_array($columns) && empty($columns)) { // columns is where
+                $columns = Spry::runFilter('dbWhere', $columns, (object) ['method' => $method, 'table' => $table, 'meta' => $this->dbMeta]);
             }
-            $join = null;
         }
 
         if (isset($columns['test_data'])) {
@@ -724,8 +746,10 @@ class SpryDB extends Medoo
         }
 
         if (!is_null($join) && !$isJoin) {
-            $where = $join;
-            $join = null;
+            $join = Spry::runFilter('dbWhere', $join, (object) ['method' => 'has', 'table' => $table, 'meta' => $this->dbMeta]);
+        } else {
+            $where = Spry::runFilter('dbWhere', $where, (object) ['method' => 'has', 'table' => $table, 'meta' => $this->dbMeta]);
+            $join = Spry::runFilter('dbJoin', $join, (object) ['method' => 'has', 'table' => $table, 'meta' => $this->dbMeta]);
         }
 
         if (isset($where['test_data'])) {
