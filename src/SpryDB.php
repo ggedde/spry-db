@@ -110,7 +110,7 @@ class SpryDB extends Medoo
         $exec = parent::exec($query, $map);
 
         if ($this->hasError()) {
-            Spry::stop(31, null, null, null, $this->errorMessage().'  - SQLCode: ('.$this->errorCode().') - '.$this->last());
+            Spry::stop(31, null, null, null, $this->errorMessage().'  - SQLCode: ('.$this->errorCode().')');
         }
 
         return $exec;
