@@ -179,7 +179,7 @@ class SpryDB extends Medoo
      */
     public function insert($table, $data)
     {
-        if (Spry::isTest()) {
+        if (Spry::isTest() && empty($this->dbMeta['excludeTestData'])) {
             $datas['test_data'] = 1;
         }
 
@@ -207,7 +207,7 @@ class SpryDB extends Medoo
      */
     public function update($table, $data, $where = null)
     {
-        if (Spry::isTest()) {
+        if (Spry::isTest() && empty($this->dbMeta['excludeTestData'])) {
             $where['test_data'] = 1;
         }
 
@@ -237,7 +237,7 @@ class SpryDB extends Medoo
      */
     public function delete($table, $where)
     {
-        if (Spry::isTest()) {
+        if (Spry::isTest() && empty($this->dbMeta['excludeTestData'])) {
             $where['test_data'] = 1;
         }
 
