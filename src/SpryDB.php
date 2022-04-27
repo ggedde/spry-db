@@ -529,7 +529,7 @@ class SpryDB extends Medoo
      */
     public function deleteTestData()
     {
-        foreach ($this->migrateTablesGet() as $tableName) {
+        foreach ($this->getTables() as $tableName) {
             parent::delete(str_replace($this->prefix, '', $tableName), ['test_data' => 1]);
         }
 
@@ -623,6 +623,30 @@ class SpryDB extends Medoo
 
 
     /**
+     * Returns Table list
+     *
+     * @access public
+     *
+     * @return array
+     */
+    public function getTables()
+    {
+        $sql = 'SHOW TABLES';
+
+        if ($results = $this->query($sql)) {
+            $this->migrateCheckErrors($sql);
+
+            return $results->fetchAll(PDO::FETCH_COLUMN);
+        }
+
+        $this->migrateCheckErrors($sql);
+
+        return [];
+    }
+
+
+
+    /**
      * Updates the Migrate Errors
      *
      * @param string $command
@@ -636,30 +660,6 @@ class SpryDB extends Medoo
         if ($error = $this->errorMessage()) {
             $this->migration['logs'][] = 'DB Error: ('.$command.') '.$error;
         }
-    }
-
-
-
-    /**
-     * Returns Table list
-     *
-     * @access private
-     *
-     * @return array
-     */
-    private function migrateTablesGet()
-    {
-        $sql = 'SHOW TABLES';
-
-        if ($results = $this->query($sql)) {
-            $this->migrateCheckErrors($sql);
-
-            return $results->fetchAll(PDO::FETCH_COLUMN);
-        }
-
-        $this->migrateCheckErrors($sql);
-
-        return [];
     }
 
 
@@ -800,7 +800,7 @@ class SpryDB extends Medoo
      */
     private function migrateTablesDrop()
     {
-        $currentTables = $this->migrateTablesGet();
+        $currentTables = $this->getTables();
 
         foreach ($currentTables as $tableName) {
             if (empty($this->migration['schema']['tables'][str_replace($this->prefix, '', $tableName)])) {
@@ -848,7 +848,7 @@ class SpryDB extends Medoo
      */
     private function migrateTablesAdd()
     {
-        $currentTables = $this->migrateTablesGet();
+        $currentTables = $this->getTables();
 
         foreach ($this->migration['schema']['tables'] as $tableName => $table) {
             $tableName = $this->prefix.$tableName;
@@ -889,7 +889,7 @@ class SpryDB extends Medoo
 
             $this->exec($sql);
 
-            if (in_array($tableName, $this->migrateTablesGet())) {
+            if (in_array($tableName, $this->getTables())) {
                 $this->migration['logs'][] = $logMessage;
             } else {
                 $this->migration['logs'][] = 'Error: '.$logMessage.'. Reported an Error.';
@@ -910,7 +910,7 @@ class SpryDB extends Medoo
      */
     private function migrateTablesUpdate()
     {
-        $currentTables = $this->migrateTablesGet();
+        $currentTables = $this->getTables();
 
         foreach ($this->migration['schema']['tables'] as $tableName => $table) {
             if (!in_array($this->prefix.$tableName, $currentTables)) {
